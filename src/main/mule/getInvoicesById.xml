@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:db="http://www.mulesoft.org/schema/mule/db" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd">
+	<flow name="getInvoicesByIdFlow" doc:id="4972b075-7218-4f5a-9a66-c00427f498f6" >
+		<http:listener doc:name="Listener" doc:id="85bf6a90-6b74-4345-800e-cb9f7dbbd8d1" config-ref="HTTP_Listener_config" path="/invoices/{id}"/>
+		<logger level="INFO" doc:name="Start getInvoicesByIdFlow" doc:id="08ae6740-8e96-4143-ae73-08861a5e159c" message="Start getInvoicesByIdFlow"/>
+		<ee:transform doc:name="Set ID" doc:id="1e960112-f5f5-4a73-8bcb-ab79c50073c8" >
+			<ee:message >
+			</ee:message>
+			<ee:variables >
+				<ee:set-variable variableName="id" ><![CDATA[message.attributes.uriParams."id"]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<db:select doc:name="Select" doc:id="3428e9ac-0125-4c0d-943f-054a0aef1c16" config-ref="Database_Config">
+			<db:sql ><![CDATA[select a.id as invoice_id,a.invoice_no,a.date,b.quantity,c.full_name,d.id as product_id, d.description, d.unit_price from invoice a
+inner join invoice_detail b on (a.id = b.invoice_id)
+inner join customer c on (a.customer_id = c.id)
+inner join product d on (b.product_id = d.id)
+where a.id = :id
+]]></db:sql>
+			<db:input-parameters ><![CDATA[#[{"id": vars.id}]]]></db:input-parameters>
+		</db:select>
+		<ee:transform doc:name="Sin Transformacion" doc:id="397f078f-419f-4894-afbf-55d56a844dad" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<!-- [STUDIO:"Con Transformacion"]<ee:transform doc:name="Con Transformacion" doc:id="376db32c-25f0-4c1a-b7fd-767ad23cf6fb" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+
+var products = payload map ((item, index) -> 
+	
+	{
+		"cod": item.product_id,
+		"precio": item.unit_price,
+		"producto": item.description
+	}
+	
+)
+
+var invoice = payload map ((item, index) -> 
+	
+	{
+		"id": item.invoice_id,
+		"number": item.invoice_no,
+		"date": item.date
+	} 
+	
+) distinctBy ($.invoice)
+
+var customer = payload map ((item, index) -> 
+	
+	{
+		"name": item.full_name
+	}
+) distinctBy ($.invoice)
+&#45;&#45;-
+{
+	"invoice": invoice[0&#93;,
+	"customer": customer[0&#93;,
+	"products": products	
+}
+&#93;&#93;></ee:set-payload>
+			</ee:message>
+		</ee:transform> [STUDIO] -->
+		<logger level="INFO" doc:name="End getInvoicesByIdFlow" doc:id="0d996810-7b3c-49af-9e88-ab600ad83487" message="End getInvoicesByIdFlow"/>
+	</flow>
+</mule>

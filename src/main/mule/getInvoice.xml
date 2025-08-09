@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:db="http://www.mulesoft.org/schema/mule/db"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<flow name="getInvoiceFlow" doc:id="af3169a8-0689-487b-a4dd-42ef618fb55a" >
+		<http:listener doc:name="Listener" doc:id="ef60c460-250d-4b69-9d55-b0c299c7352e" config-ref="HTTP_Listener_config" path="/invoices"/>
+		<logger level="INFO" doc:name="Start getInvoiceFlow" doc:id="992fe3e4-88a9-4c83-9e5b-5e6d7ee0f3ec" message="Start getInvoiceFlow"/>
+		<db:select doc:name="Select" doc:id="4af70a31-c823-4430-98e5-a9431cf528a9" config-ref="Database_Config">
+			<db:sql ><![CDATA[select a.id,a.invoice_no,a.date,c.full_name from invoice a
+inner join customer c on (a.customer_id = c.id);
+]]></db:sql>
+		</db:select>
+		<ee:transform doc:name="Transform Message" doc:id="d9c42ddc-d70d-431e-9839-cd4edea08449" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="End getInvoiceFlow" doc:id="43244597-4b72-4b9e-aa09-4dcdeec0bc15" message="End getInvoiceFlow"/>
+	</flow>
+</mule>

@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:db="http://www.mulesoft.org/schema/mule/db"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="1cba77aa-63ff-49b3-878e-52d288eb981a" >
+		<http:listener-connection host="0.0.0.0" port="8081" />
+	</http:listener-config>
+	<db:config name="Database_Config" doc:name="Database Config" doc:id="d55f34bb-445b-4dda-9640-457472c6fdcb" >
+		<db:my-sql-connection host="localhost" port="3306" user="root" password="1234" database="retail" />
+	</db:config>
+	<flow name="getCustomerFlow" doc:id="2ed1fe8e-82a8-420e-926d-e438e035155f" >
+		<http:listener doc:name="Listener" doc:id="bd7b3813-e515-41e8-9abb-766d04ecbc1b" config-ref="HTTP_Listener_config" path="/customers"/>
+		<logger level="INFO" doc:name="Start Get Customer" doc:id="477d001c-e4c9-4b2a-95e3-5b58756dab11" message="Start Get Customer" />
+		<set-variable value='#[message.attributes.queryParams."name"]' doc:name="Set Name" doc:id="4a8c73a7-ec60-4925-baf2-2af2391100e7" variableName="name"/>
+		<choice doc:name="Choice" doc:id="cacd8905-5dac-4d87-aad7-321c3db2d420" >
+			<when expression='#[vars.name != null and vars.name != ""]'>
+				<db:select doc:name="Select" doc:id="7720bc43-82da-4727-8b12-c68983d2be3c" config-ref="Database_Config">
+					<db:sql ><![CDATA[SELECT * FROM customer WHERE full_name LIKE CONCAT('%', :name, '%')]]></db:sql>
+					<db:input-parameters ><![CDATA[#[{"name": vars.name}]]]></db:input-parameters>
+				</db:select>
+			</when>
+			<otherwise >
+				<db:select doc:name="Select" doc:id="c3cda85c-4900-41f5-a118-02c72a03ab40" config-ref="Database_Config">
+			<db:sql><![CDATA[select * from customer]]></db:sql>
+		</db:select>
+			</otherwise>
+		</choice>
+		<ee:transform doc:name="Transform Message" doc:id="cfb48ea2-c1d0-4e62-a8fe-43cfe58b4573" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="End Get Customer" doc:id="9d05b045-d832-43a1-baee-9e59f08a5856" message="End Get Customer"/>
+	</flow>
+</mule>
